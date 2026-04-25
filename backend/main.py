@@ -15,7 +15,7 @@ from backend.agent import run_agent, clear_memory
 # Import RAG utilities
 from backend.rag import add_document, get_stats
 
-# ── APP SETUP ────────────────────────────────────────────────
+# ── APP SETUP 
 
 app = FastAPI(
     title="SigmaTutor API",
@@ -36,7 +36,7 @@ app.add_middleware(
 UPLOAD_DIR = Path("backend/data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── REQUEST MODELS ───────────────────────────────────────────
+# REQUEST MODELS 
 
 class ChatRequest(BaseModel):
     message: str
@@ -44,7 +44,7 @@ class ChatRequest(BaseModel):
 class ClearRequest(BaseModel):
     confirm: bool = True
 
-# ── ENDPOINTS ────────────────────────────────────────────────
+# ENDPOINTS 
 
 @app.get("/")
 def root():
@@ -259,7 +259,7 @@ async def list_tools():
     }
 
 
-# ── RUN SERVER ───────────────────────────────────────────────
+# RUN SERVER 
 
 if __name__ == "__main__":
     import uvicorn
