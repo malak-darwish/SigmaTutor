@@ -1,5 +1,4 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -12,7 +11,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.0
 )
 
-@tool
+
 def generate_matlab(task: str) -> str:
     """
     Generates clean, commented MATLAB code for any signals and systems task.

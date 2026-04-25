@@ -6,12 +6,13 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
 from backend.rag import search_documents, format_search_results
 
+
 # Load environment variables
 load_dotenv()
 
 # Initialize Gemini LLM
 llm = ChatGoogleGenerativeAI(
-   model="gemini-2.5-flash",
+   model="gemini-2.0-flash-lite",
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     temperature=0.7,
 )
@@ -160,7 +161,7 @@ tools = [
     Tool(
         name="Diagram_Generator",
         func=generate_diagram,
-        description="Generate block diagrams for LTI systems, receivers, filters, etc."
+        description="Generate block diagrams for LTI systems, receivers, filters, etc. IMPORTANT: When using this tool, return ONLY the raw Mermaid diagram code starting with 'graph LR' with NO additional text or explanation."
     ),
     Tool(
         name="Concept_Explainer",

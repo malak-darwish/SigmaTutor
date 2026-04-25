@@ -94,16 +94,40 @@ export default function App() {
   const [activeSession, setActiveSession] = useState(1)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  function handleSend(text) {
+async function handleSend(text) {
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setLoading(true)
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      })
+      const data = await response.json()
+      let content = data.response
+
+      // Extract mermaid diagram if present in mixed response
+      const mermaidFenced = content.match(/```mermaid\n([\s\S]*?)```/)
+      const mermaidRaw = content.match(/(graph LR[\s\S]*?)(?:\n\n|$)/)
+      
+      if (mermaidFenced) {
+        content = mermaidFenced[1].trim()
+      } else if (mermaidRaw) {
+        content = mermaidRaw[1].trim()
+      }
+
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: `You asked: *"${text}"*\n\nThis is a mock response — the backend is not connected yet.` },
+        { role: 'assistant', content: content }
       ])
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: "Error connecting to backend. Make sure the server is running!" }
+      ])
+    } finally {
       setLoading(false)
-    }, 1200)
+    }
   }
 
   function handleNewChat() {

@@ -1,6 +1,5 @@
 import re
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -8,7 +7,7 @@ import os
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash-lite",
     api_key=os.environ.get("GOOGLE_API_KEY"),
     temperature=0.0
 )
@@ -26,7 +25,7 @@ def _clean_mermaid(diagram: str) -> str:
     diagram = re.sub(r'\|([^|]+)\|', clean_label, diagram)
     return diagram
 
-@tool
+
 def generate_diagram(system_description: str) -> str:
     """
     Generates a Mermaid.js block diagram for a signals and systems or communications system.

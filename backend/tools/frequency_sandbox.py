@@ -5,7 +5,6 @@ import base64
 import io
 from scipy import signal
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -458,7 +457,6 @@ def _apply_operation(op_dict: dict):
         return "Operation not recognized."
 
 # ── Tool ──────────────────────────────────────────────────────────────────────
-@tool
 def frequency_sandbox(instruction: str) -> str:
     """
     Interactive frequency sandbox. Student describes a signal in English and can

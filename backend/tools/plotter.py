@@ -6,7 +6,6 @@ import io
 import json
 from scipy import signal
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -15,7 +14,7 @@ load_dotenv()
 matplotlib.use('Agg')
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash-lite",
     api_key=os.environ.get("GOOGLE_API_KEY"),
     temperature=0.0
 )
@@ -276,7 +275,7 @@ def _generate_plot(parsed: dict) -> str:
     plt.tight_layout()
     return _plot_to_base64(fig)
 
-@tool
+
 def plot_signal(description: str) -> str:
     """
     Plots signals from a natural language description. Supports sine, cosine, square,

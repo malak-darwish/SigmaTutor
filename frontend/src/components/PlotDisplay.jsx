@@ -188,9 +188,33 @@ const DEMO_PLOTS = [
   { id: 'plot-freq', label: 'Frequency Domain  X(f)', Component: FreqDomainSVG },
 ]
 
-export default function PlotDisplay({ title = 'Signal Analysis', plots = DEMO_PLOTS, mode = 'dual' }) {
-  const [maximized, setMaximized] = useState(null) // plot object
+export default function PlotDisplay({ title = 'Signal Analysis', plots = DEMO_PLOTS, mode = 'dual', imageBase64 = null }) {
+  const [maximized, setMaximized] = useState(null)
 
+  // If we have a real base64 image from backend, show it directly
+  if (imageBase64) {
+    return (
+      <div style={s.root}>
+        <div style={s.header}>
+          <span style={s.title}>{title}</span>
+          <span style={s.badge}>Signal Plot</span>
+        </div>
+        <div style={{ padding: '12px', background: '#0b0d18' }}>
+          <img
+            src={`data:image/png;base64,${imageBase64}`}
+            alt="Signal Plot"
+            style={{
+              width: '100%',
+              borderRadius: 8,
+              display: 'block'
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Otherwise show demo plots
   return (
     <div style={s.root}>
       <div style={s.header}>

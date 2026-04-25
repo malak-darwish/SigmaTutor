@@ -1,3 +1,5 @@
+import PlotDisplay from './PlotDisplay'
+import DiagramDisplay from './DiagramDisplay'
 import { useRef, useEffect, useState } from 'react'
 import { ArrowUp } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -75,12 +77,24 @@ function SigmaAvatar() {
 // ─── Messages ────────────────────────────────────────────────────────────────
 
 function AIMessage({ content }) {
+  const isMermaid = content.trim().startsWith('graph ') || 
+                    content.trim().startsWith('flowchart ') ||
+                    content.trim().startsWith('sequenceDiagram')
+  
+  const isBase64Image = content.trim().startsWith('data:image') || 
+                        content.length > 1000 && /^[A-Za-z0-9+/=]+$/.test(content.trim())
+
   return (
     <div style={s.aiRow}>
       <SigmaAvatar />
       <div style={s.aiContent}>
         <span style={s.aiName}>ΣTutor</span>
-        <MarkdownContent>{content}</MarkdownContent>
+        {isMermaid 
+          ? <DiagramDisplay diagram={content.trim()} title="Block Diagram" />
+          : isBase64Image
+          ? <PlotDisplay imageBase64={content.trim()} title="Signal Plot" />
+          : <MarkdownContent>{content}</MarkdownContent>
+        }
       </div>
     </div>
   )
