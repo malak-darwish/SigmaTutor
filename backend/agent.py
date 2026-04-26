@@ -116,21 +116,35 @@ def frequency_sandbox(query: str) -> str:
 # ── SCHEMA
 
 class InputSchema(BaseModel):
-    query: str
+    query: str = ""
+    
+    class Config:
+        extra = "allow"
 
 # ── TOOLS LIST
-
 tools = [
     StructuredTool.from_function(
         func=rag_search,
         name="RAG_Search",
-        description="Search course lectures, textbooks, past exams for Signals and Systems or Communications questions.",
+        description="Search course lectures and textbooks.",
         args_schema=InputSchema
     ),
     StructuredTool.from_function(
-        func=calculate,
-        name="Calculator",
-        description="Solve math problems step by step. Use for SNR, bandwidth, Nyquist rate calculations.",
+        func=plot_signal,
+        name="Signal_Plotter",
+        description="Plot signals in time and frequency domain.",
+        args_schema=InputSchema
+    ),
+    StructuredTool.from_function(
+        func=generate_matlab,
+        name="MATLAB_Generator",
+        description="Generate MATLAB code for signals tasks.",
+        args_schema=InputSchema
+    ),
+    StructuredTool.from_function(
+        func=generate_diagram,
+        name="Diagram_Generator",
+        description="Generate Mermaid block diagrams.",
         args_schema=InputSchema
     ),
     StructuredTool.from_function(
@@ -139,156 +153,29 @@ tools = [
         description="Search internet for current information.",
         args_schema=InputSchema
     ),
-    StructuredTool.from_function(
-        func=plot_signal,
-        name="Signal_Plotter",
-        description="Plot signals in time and frequency domain from text description.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=generate_matlab,
-        name="MATLAB_Generator",
-        description="Generate clean commented MATLAB code for signals and communications tasks.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=generate_exam,
-        name="Exam_Generator",
-        description="Generate exam questions with solutions based on topic and difficulty.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=prove_formula,
-        name="Formula_Prover",
-        description="Prove or derive mathematical formulas step by step with LaTeX.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=generate_diagram,
-        name="Diagram_Generator",
-        description="Generate Mermaid block diagrams for signals and systems.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=explain_concept,
-        name="Concept_Explainer",
-        description="Explain concepts step by step with examples.",
-        args_schema=InputSchema
-    ),
-    StructuredTool.from_function(
-        func=frequency_sandbox,
-        name="Frequency_Sandbox",
-        description="Interactive tool to explore signals in time and frequency domain.",
-        args_schema=InputSchema
-    ),
 ]
 
 # ── SYSTEM PROMPT
-SYSTEM_PROMPT = """You are SigmaTutor, an expert AI tutor specializing in Signals and Systems and Communications Systems. You help engineering students understand concepts, solve problems, generate code, and visualize signals.
+SYSTEM_PROMPT = """You are SigmaTutor, an AI tutor for Signals, Systems and Communications.
 
-═══════════════════════════════════════
-FORMATTING RULES (ALWAYS APPLY)
-═══════════════════════════════════════
-- Always use LaTeX for ALL mathematical formulas
-- Inline math: $formula$ e.g. $x(t) = A\\sin(2\\pi ft)$
-- Display math: $$formula$$ on its own line
-- NEVER write math as plain text like x(t) = A*sin(2*pi*f*t)
+FORMATTING: Always use LaTeX for math. Inline: $formula$. Display: $$formula$$
 
-═══════════════════════════════════════
-TOOL SELECTION RULES (STRICT)
-═══════════════════════════════════════
+TOOLS - use immediately when requested:
+- "matlab code" or "write script" → MATLAB_Generator
+- "plot" or "show signal" → Signal_Plotter  
+- "block diagram" or "draw system" → Diagram_Generator
+- "exam questions" or "quiz" → Exam_Generator
+- "prove" or "derive" → Formula_Prover
+- "from lectures" or "course material" → RAG_Search
+- "latest" or "current" → Web_Search
+- "calculate" or "compute" → Calculator
+- "explain in detail" → Concept_Explainer
 
-MATLAB_Generator — call when user wants to:
-✓ generate, write, create, produce MATLAB code or script
-✓ "matlab code for X", "write matlab script for X", "create matlab program for X"
-✗ DO NOT call for: "what is matlab", "explain matlab", "how does matlab work"
+TOOL QUERY: plain English only, no LaTeX, no special characters.
 
-Signal_Plotter — call when user wants to:
-✓ plot, visualize, draw, show a signal waveform
-✓ "plot X signal", "show me a sine wave", "visualize X Hz signal"
-✗ DO NOT call for matlab code requests even if they mention signals
-
-Diagram_Generator — call when user wants to:
-✓ draw, create, generate a block diagram or system diagram
-✓ "block diagram of X", "draw X system", "diagram for X modulator"
-✗ DO NOT call for matlab code requests even if they mention diagrams
-
-Exam_Generator — call when user wants to:
-✓ generate, create exam questions, quiz, practice problems
-✓ "generate X questions on Y", "create quiz about X", "practice problems for X"
-✗ DO NOT call for general explanations
-
-Formula_Prover — call when user wants to:
-✓ prove, derive, show derivation of a formula or theorem
-✓ "prove X theorem", "derive X formula", "show derivation of X"
-✗ DO NOT call for general explanations of what a formula means
-
-RAG_Search — call when user asks about:
-✓ course-specific content, lectures, textbook material
-✓ "from my lectures", "in the course", "what does the textbook say about X"
-✗ DO NOT call for general knowledge questions
-
-Web_Search — call when user asks about:
-✓ current events, latest versions, recent news
-✓ "latest X", "current X", "recent X", "what is the newest X"
-
-Calculator — call when user wants to:
-✓ numerical calculations: Nyquist rate, SNR, bandwidth, wavelength
-✓ "calculate X", "what is the value of X", "compute X"
-
-Concept_Explainer — call when user wants:
-✓ detailed structured explanation of a concept
-✓ "explain X in detail", "give me a full explanation of X"
-
-Frequency_Sandbox — call when user wants:
-✓ interactive signal exploration, build and modify signals step by step
-
-═══════════════════════════════════════
-DECISION EXAMPLES (FOLLOW EXACTLY)
-═══════════════════════════════════════
-"what is matlab?" → answer directly, NO tools
-"what is the Fourier Transform?" → answer directly with LaTeX
-"explain convolution" → answer directly with LaTeX
-"generate matlab code for AM modulation" → MATLAB_Generator
-"write a matlab script for FFT" → MATLAB_Generator
-"plot a 10Hz sine wave" → Signal_Plotter
-"show me a square wave" → Signal_Plotter
-"draw block diagram of superheterodyne receiver" → Diagram_Generator
-"block diagram for FM modulator" → Diagram_Generator
-"generate 3 exam questions on sampling" → Exam_Generator
-"prove Parseval theorem" → Formula_Prover
-"derive Fourier Transform of rect pulse" → Formula_Prover
-"what does my lecture say about PAM?" → RAG_Search
-"latest version of MATLAB?" → Web_Search
-"calculate Nyquist rate for 5kHz signal" → Calculator
-"explain convolution in detail with steps" → Concept_Explainer
-
-═══════════════════════════════════════
-TOOL CALLING RULES
-═══════════════════════════════════════
-- Query must be simple plain English text ONLY
-- NO LaTeX in tool queries
-- NO special characters in tool queries
-- Keep query short: "AM modulation" not "AM modulation with carrier $A_c\\cos(2\\pi f_c t)$"
-
-═══════════════════════════════════════
-OUTPUT RULES AFTER TOOL USE
-═══════════════════════════════════════
-- MATLAB_Generator returns code → paste code EXACTLY as returned, do NOT describe it
-- Diagram_Generator returns diagram → paste diagram EXACTLY as returned, do NOT describe it  
-- Signal_Plotter returns image → paste image data EXACTLY as returned, do NOT describe it
-- All other tools → summarize result in natural language with LaTeX
-- NEVER show raw tool call syntax, XML tags, or JSON in response
-- NEVER describe what a tool returned instead of showing it
-
-═══════════════════════════════════════
-GENERAL BEHAVIOR
-═══════════════════════════════════════
-- For simple concept questions → answer directly and clearly with LaTeX
-- Be encouraging and educational
-- Keep responses concise and focused
-- If unsure which tool to use → answer directly from knowledge"""
-
+AFTER TOOL: return result exactly as-is. Never describe it.
+For general questions: answer directly with LaTeX math.
+Be concise and educational."""
 
 # ── CREATE AGENT
 
@@ -303,10 +190,11 @@ agent = create_react_agent(
 def run_agent(user_message: str) -> dict:
     try:
         chat_history.append(HumanMessage(content=user_message))
-
-        # Keep only last 4 messages to minimize tokens
         recent_history = chat_history[-2:]
 
+        # Debug token count
+        total_chars = sum(len(str(m.content)) for m in recent_history)
+        print(f"DEBUG: messages chars={total_chars}, estimated tokens={total_chars//4}")
         response = agent.invoke(
             {"messages": recent_history},
             config={"recursion_limit": 50}
@@ -315,7 +203,6 @@ def run_agent(user_message: str) -> dict:
         ai_message = None
 
         for msg in reversed(messages):
-            # Skip tool call messages
             if hasattr(msg, 'tool_calls') and msg.tool_calls:
                 continue
             if hasattr(msg, 'type') and msg.type == 'tool':
@@ -341,7 +228,29 @@ def run_agent(user_message: str) -> dict:
         return {"success": True, "response": ai_message}
 
     except Exception as e:
-        return {"success": False, "response": f"Error: {str(e)}"}
+        error_msg = str(e)
+        
+        # If tool call failed → retry without tools, answer directly
+        if "tool_use_failed" in error_msg or "tool call validation failed" in error_msg:
+            try:
+                fallback_llm = ChatGroq(
+                    model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+                    api_key=os.getenv("GROQ_API_KEY")
+                )
+                fallback_response = fallback_llm.invoke([
+                    HumanMessage(content=f"Answer this question directly with LaTeX math formatting: {user_message}")
+                ])
+                ai_message = fallback_response.content
+                chat_history.append(AIMessage(content=ai_message))
+                return {"success": True, "response": ai_message}
+            except Exception as e2:
+                return {"success": False, "response": f"Error: {str(e2)}"}
+        
+        # Token limit error
+        if "Request too large" in error_msg or "rate_limit_exceeded" in error_msg:
+            return {"success": False, "response": "Request too large. Please try a shorter or simpler query."}
+        
+        return {"success": False, "response": f"Error: {error_msg}"}
 
 
 def clear_memory():
