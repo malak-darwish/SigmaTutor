@@ -14,8 +14,7 @@ Uses:
 from typing import Dict, Any, Optional
 
 from backend.tools.gemini_client import ask_gemini_json
-from backend.tools.wolfram_client import get_best_wolfram_plaintext
-from backend.tools.wolfram_client import wolfram_verification_block
+
 
 
 SYSTEM_INSTRUCTION = """

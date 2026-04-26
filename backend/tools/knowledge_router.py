@@ -10,11 +10,10 @@ route_knowledge_tool(...)
 """
 
 from typing import Dict, Any
-
-from tools.concept_explainer import explain_concept
-from tools.exam_gen import generate_exam
-from tools.prover import prove_formula
-from tools.calculator import (
+from backend.tools.concept_explainer import explain_concept
+from backend.tools.exam_gen import generate_exam
+from backend.tools.prover import prove_formula
+from backend.tools.calculator import (
     nyquist_rate,
     sampling_interval,
     shannon_capacity,

@@ -4,7 +4,6 @@ import matplotlib
 import base64
 import io
 from scipy import signal
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -13,11 +12,8 @@ import json
 load_dotenv()
 matplotlib.use('Agg')
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    api_key=os.environ.get("GOOGLE_API_KEY"),
-    temperature=0.0
-)
+from langchain_groq import ChatGroq
+llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
 
 # ── Sandbox State ─────────────────────────────────────────────────────────────
 class SignalState:
@@ -496,3 +492,6 @@ def frequency_sandbox(instruction: str) -> str:
 
     title = " → ".join(_state.history[-3:])
     return _plot_current_state(title)
+
+def run_sandbox(instruction: str) -> str:
+    return frequency_sandbox(instruction)

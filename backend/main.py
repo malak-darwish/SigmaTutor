@@ -178,7 +178,7 @@ async def stats():
             "rag": rag_stats,
             "upload_dir": str(UPLOAD_DIR),
             "models": {
-                "llm": "gemini-2.5-flash",
+                "llm": os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
                 "embeddings": "all-MiniLM-L6-v2"
             }
         }

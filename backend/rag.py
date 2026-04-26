@@ -6,20 +6,14 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
-# Load environment variables
 load_dotenv()
 
-# Paths
 LECTURES_PATH = Path(__file__).parent / "data" / "knowledge"
 CHROMA_PATH = Path(__file__).parent / "data" / "chroma_db"
 
-# Initialize embeddings
-embeddings = HuggingFaceEmbeddings(
-    model_name="all-MiniLM-L6-v2"
-)
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 def load_pdfs():
-    """Load all PDFs from the knowledge folder"""
     documents = []
     pdf_files = list(LECTURES_PATH.glob("**/*.pdf"))
     print(f"Found {len(pdf_files)} PDF files")
@@ -34,17 +28,13 @@ def load_pdfs():
     return documents
 
 def create_vector_store():
-    """Create ChromaDB vector store from PDFs"""
     print("Loading PDFs...")
     documents = load_pdfs()
     if not documents:
         print("No documents found!")
         return None
     print(f"Splitting {len(documents)} pages into chunks...")
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = splitter.split_documents(documents)
     print(f"Created {len(chunks)} chunks")
     print("Creating vector store...")
@@ -57,50 +47,43 @@ def create_vector_store():
     return vector_store
 
 def get_vector_store():
-    """Load existing vector store or create new one"""
     if CHROMA_PATH.exists():
         print("Loading existing vector store...")
-        vector_store = Chroma(
+        return Chroma(
             persist_directory=str(CHROMA_PATH),
             embedding_function=embeddings
         )
-        return vector_store
     else:
         print("No existing vector store found. Creating new one...")
         return create_vector_store()
 
-def search_documents(query: str, k: int = 4):
-    """Search the vector store for relevant documents"""
+def search_documents(query: str, k: int = 1):
     try:
         vector_store = get_vector_store()
         if vector_store is None:
             return []
-        results = vector_store.similarity_search(query, k=k)
-        return results
+        return vector_store.similarity_search(query, k=k)
     except Exception as e:
         print(f"Search error: {e}")
         return []
 
 def format_search_results(results):
-    """Format search results into a string"""
     if not results:
         return "No relevant content found in lectures."
     formatted = []
     for i, doc in enumerate(results, 1):
         source = doc.metadata.get('source', 'Unknown')
         page = doc.metadata.get('page', 'Unknown')
-        formatted.append(f"[Source {i}: {Path(source).name}, Page {page}]\n{doc.page_content}")
+        # Truncate to 500 chars max
+        content = doc.page_content[:500]
+        formatted.append(f"[Source {i}: {Path(source).name}, Page {page}]\n{content}")
     return "\n\n".join(formatted)
 
 def add_document(file_path: str):
-    """Add a new PDF to the existing vector store"""
     try:
         loader = PyPDFLoader(file_path)
         docs = loader.load()
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200
-        )
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_documents(docs)
         vector_store = get_vector_store()
         vector_store.add_documents(chunks)
@@ -111,7 +94,6 @@ def add_document(file_path: str):
         return False
 
 def get_stats():
-    """Get vector store statistics"""
     try:
         vector_store = get_vector_store()
         collection = vector_store._collection
@@ -120,7 +102,6 @@ def get_stats():
     except Exception as e:
         return {"total_chunks": 0, "status": "error", "error": str(e)}
 
-# Run this to build the vector store
 if __name__ == "__main__":
     print("Building RAG vector store from lectures...")
     create_vector_store()

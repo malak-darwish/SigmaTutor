@@ -1,16 +1,14 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    api_key=os.environ.get("GOOGLE_API_KEY"),
-    temperature=0.0
+llm = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+    api_key=os.getenv("GROQ_API_KEY")
 )
-
 
 def generate_matlab(task: str) -> str:
     """

@@ -1,29 +1,47 @@
 import re
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-lite",
-    api_key=os.environ.get("GOOGLE_API_KEY"),
-    temperature=0.0
+llm = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+    api_key=os.getenv("GROQ_API_KEY")
 )
-
 def _clean_mermaid(diagram: str) -> str:
-    """Remove special characters from arrow labels that break Mermaid"""
+    """Remove special characters that break Mermaid"""
+    # Fix arrow labels
     def clean_label(match):
         label = match.group(1)
         label = label.replace("(", "").replace(")", "")
         label = label.replace("+/-", "pm")
         label = label.replace("/", "-")
         label = label.replace(" ", "_")
+        label = re.sub(r'[^\w|_\-]', '', label)
         return f"|{label}|"
 
     diagram = re.sub(r'\|([^|]+)\|', clean_label, diagram)
-    return diagram
+    
+    # Remove any unicode dash characters that break Mermaid
+    diagram = diagram.replace('─', '-')
+    diagram = diagram.replace('→', '-->')
+    diagram = diagram.replace('—', '-')
+    diagram = diagram.replace('–', '-')
+    
+    # Remove lines with special unicode characters
+    lines = diagram.split('\n')
+    clean_lines = []
+    for line in lines:
+        try:
+            line.encode('ascii')
+            clean_lines.append(line)
+        except UnicodeEncodeError:
+            # Replace non-ASCII with safe version
+            clean_lines.append(re.sub(r'[^\x00-\x7F]', '', line))
+    
+    return '\n'.join(clean_lines).strip()
 
 
 def generate_diagram(system_description: str) -> str:

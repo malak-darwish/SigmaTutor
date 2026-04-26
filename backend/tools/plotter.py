@@ -5,7 +5,7 @@ import base64
 import io
 import json
 from scipy import signal
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
@@ -13,99 +13,25 @@ import os
 load_dotenv()
 matplotlib.use('Agg')
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-lite",
-    api_key=os.environ.get("GOOGLE_API_KEY"),
-    temperature=0.0
+llm = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 def _parse_signals(description: str) -> dict:
-    """Use Gemini to extract signal parameters and operation from natural language"""
-    prompt = f"""
-You are a signals and systems expert. Extract signal parameters from this description:
-"{description}"
+    """Extract signal parameters from natural language"""
+    prompt = f"""Extract signal parameters from: "{description}"
+Respond ONLY with JSON, no explanation, no markdown.
+Format: {{"operation":"plot","freq_min":null,"freq_max":null,"signals":[{{"signal_type":"sine","frequency":10.0,"amplitude":1.0,"t_start":-1.0,"t_end":1.0,"sample_rate":1000.0,"phase_deg":0.0}}]}}
+Operations: plot, multiply, convolve, add
+Signal types: sine, cosine, square, sawtooth, triangle, rect, impulse, step, comb"""
 
-Respond ONLY with a JSON object, no explanation, no markdown, just raw JSON.
-
-Format:
-{{
-    "operation": "plot",
-    "freq_min": null,
-    "freq_max": null,
-    "signals": [
-        {{
-            "signal_type": "sine",
-            "frequency": 10.0,
-            "amplitude": 1.0,
-            "t_start": -1.0,
-            "t_end": 1.0,
-            "sample_rate": 1000.0,
-            "phase_deg": 0.0
-        }}
-    ]
-}}
-
-operation options:
-- "plot"         : plot the signals individually or together
-- "multiply"     : multiply the signals together (signal1 * signal2)
-- "convolve"     : convolve the signals together
-- "add"          : add the signals together
-
-signal_type options:
-- sine           : A * sin(2*pi*f*t + phase)
-- cosine         : A * cos(2*pi*f*t + phase)
-- square         : square wave at frequency f
-- sawtooth       : sawtooth wave at frequency f
-- triangle       : triangle wave at frequency f
-- rect           : rectangular pulse
-- impulse        : delta function spike at t=0
-- step           : unit step u(t)
-- comb           : impulse train at interval 1/f
-
-Rules:
-- t_start: start of time axis (default -1.0)
-- t_end: end of time axis (default 1.0)
-- freq_min: start of frequency axis in Hz (default null = auto -sample_rate/2)
-- freq_max: end of frequency axis in Hz (default null = auto sample_rate/2)
-- If user specifies a time range like "from -2 to 2" use those values
-- If user specifies a frequency range like "show frequencies up to 50Hz" set freq_max=50
-- If user specifies "show frequencies from -20 to 20" set freq_min=-20, freq_max=20
-- phase_deg is phase shift in degrees (default 0)
-- sample_rate default 1000.0 Hz
-- frequency is not needed for impulse and step signals, omit it
-- For multiply/convolve/add always return exactly 2 signals
-- For plot return as many signals as described
-
-Examples:
-- "plot a 10Hz sine wave" ->
-{{"operation": "plot", "freq_min": null, "freq_max": null, "signals": [{{"signal_type": "sine", "frequency": 10.0, "amplitude": 1.0, "t_start": -1.0, "t_end": 1.0, "sample_rate": 1000.0, "phase_deg": 0.0}}]}}
-
-- "plot a step signal from -1 to 1" ->
-{{"operation": "plot", "freq_min": null, "freq_max": null, "signals": [{{"signal_type": "step", "amplitude": 1.0, "t_start": -1.0, "t_end": 1.0, "sample_rate": 1000.0, "phase_deg": 0.0}}]}}
-
-- "plot a 10Hz sine from -2 to 2, show frequencies up to 50Hz" ->
-{{"operation": "plot", "freq_min": null, "freq_max": 50.0, "signals": [{{"signal_type": "sine", "frequency": 10.0, "amplitude": 1.0, "t_start": -2.0, "t_end": 2.0, "sample_rate": 1000.0, "phase_deg": 0.0}}]}}
-
-- "plot sine and cosine at 5Hz from -2 to 2" ->
-{{"operation": "plot", "freq_min": null, "freq_max": null, "signals": [
-    {{"signal_type": "sine", "frequency": 5.0, "amplitude": 1.0, "t_start": -2.0, "t_end": 2.0, "sample_rate": 1000.0, "phase_deg": 0.0}},
-    {{"signal_type": "cosine", "frequency": 5.0, "amplitude": 1.0, "t_start": -2.0, "t_end": 2.0, "sample_rate": 1000.0, "phase_deg": 0.0}}
-]}}
-
-- "multiply a rect pulse with a 10Hz sine wave" ->
-{{"operation": "multiply", "freq_min": null, "freq_max": null, "signals": [
-    {{"signal_type": "rect", "frequency": 2.0, "amplitude": 1.0, "t_start": -1.0, "t_end": 1.0, "sample_rate": 1000.0, "phase_deg": 0.0}},
-    {{"signal_type": "sine", "frequency": 10.0, "amplitude": 1.0, "t_start": -1.0, "t_end": 1.0, "sample_rate": 1000.0, "phase_deg": 0.0}}
-]}}
-"""
     response = llm.invoke([HumanMessage(content=prompt)])
     text = response.content.strip()
-
     if text.startswith("```"):
         text = text.split("\n", 1)[1]
     if text.endswith("```"):
         text = text.rsplit("```", 1)[0]
-
     return json.loads(text.strip())
 
 def _generate_signal(params: dict, t: np.ndarray) -> np.ndarray:

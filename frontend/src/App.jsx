@@ -89,7 +89,7 @@ The dual of the convolution theorem is equally useful: **multiplication in time*
 ]
 
 export default function App() {
-  const [messages, setMessages] = useState(MOCK_MESSAGES)
+  const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [activeSession, setActiveSession] = useState(1)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -105,6 +105,9 @@ async function handleSend(text) {
       })
       const data = await response.json()
       let content = data.response
+      // Remove raw tool call tags from response
+      content = content.replace(/<[^>]+>\{[^}]+\}<\/[^>]+>/g, '').trim()
+      content = content.replace(/<function=[^>]+>.*?<\/function>/gs, '').trim()
 
       // Extract mermaid diagram if present in mixed response
       const mermaidFenced = content.match(/```mermaid\n([\s\S]*?)```/)
