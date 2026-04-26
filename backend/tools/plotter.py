@@ -75,9 +75,13 @@ def _plot_to_base64(fig) -> str:
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
-    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    img_bytes = buf.read()
     buf.close()
     plt.close(fig)
+    # If image is too large (e.g. > 1MB), return a warning string
+    if len(img_bytes) > 1_000_000:
+        return "Plot image too large. Please reduce the time range or sample rate and try again."
+    img_base64 = base64.b64encode(img_bytes).decode('utf-8')
     return img_base64
 
 def _style_ax(ax):

@@ -17,6 +17,7 @@ from typing import Dict, Any
 
 
 from backend.tools.wolfram_client import wolfram_verification_block
+from backend.tools.gemini_client import ask_gemini_json
 
 
 
