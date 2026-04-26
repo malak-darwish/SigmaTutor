@@ -6,13 +6,13 @@ import os
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model=os.environ.get("GEMINI_MODEL"),
     api_key=os.environ.get("GOOGLE_API_KEY"),
     temperature=0.0
 )
 
 
-def generate_matlab(task: str) -> str:
+def generate_matlab_code(task: str) -> str:
     """
     Generates clean, commented MATLAB code for any signals and systems task.
     Automatically detects required toolboxes and structures code into clear sections.
