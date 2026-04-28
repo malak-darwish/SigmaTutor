@@ -5,14 +5,14 @@ import base64
 import io
 import json
 from scipy import signal
-from langchain_groq import ChatGroq
+
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 matplotlib.use('Agg')
-
+from langchain_groq import ChatGroq  # ✅
 llm = ChatGroq(
     model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
     api_key=os.getenv("GROQ_API_KEY")

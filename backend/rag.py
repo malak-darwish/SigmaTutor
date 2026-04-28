@@ -12,6 +12,9 @@ LECTURES_PATH = Path(__file__).parent / "data" / "knowledge"
 CHROMA_PATH = Path(__file__).parent / "data" / "chroma_db"
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# Add this at the top of rag.py:
+_vector_store_cache = None
+
 
 def load_pdfs():
     documents = []
@@ -46,16 +49,26 @@ def create_vector_store():
     print("✅ Vector store created successfully!")
     return vector_store
 
+
+_vector_store_cache = None
+
 def get_vector_store():
+    global _vector_store_cache
+    if _vector_store_cache is not None:
+        print("Using cached vector store...")
+        return _vector_store_cache
+
     if CHROMA_PATH.exists():
         print("Loading existing vector store...")
-        return Chroma(
+        _vector_store_cache = Chroma(
             persist_directory=str(CHROMA_PATH),
             embedding_function=embeddings
         )
     else:
         print("No existing vector store found. Creating new one...")
-        return create_vector_store()
+        _vector_store_cache = create_vector_store()
+
+    return _vector_store_cache
 
 def search_documents(query: str, k: int = 1):
     try:

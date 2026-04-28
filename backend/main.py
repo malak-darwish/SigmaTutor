@@ -68,7 +68,7 @@ async def chat(request: ChatRequest):
     Handles all types of questions:
     - Signals & Systems course questions (uses RAG)
     - Communications Systems questions (uses RAG)
-    - General questions like LLMs, AI, math (uses Gemini knowledge)
+    - General questions like LLMs, AI, math (uses Groq knowledge)
     - Signal plotting requests (uses plotter tool)
     - MATLAB code requests (uses MATLAB generator)
     - Exam generation (uses exam generator)
@@ -257,7 +257,30 @@ async def list_tools():
             }
         ]
     }
+class SandboxRequest(BaseModel):
+    message: str
 
+@app.post("/sandbox")
+async def sandbox(request: SandboxRequest):
+    try:
+        if not request.message.strip():
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        from backend.tools.frequency_sandbox import run_sandbox
+        from backend.agent import llm
+        
+        result = run_sandbox(instruction=request.message, llm=llm)
+        
+        return {
+            "success": True,
+            "response": result,
+            "message": request.message
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "response": f"Sandbox error: {str(e)}"}
+        )
 
 # RUN SERVER 
 

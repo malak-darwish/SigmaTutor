@@ -13,9 +13,8 @@ Uses:
 
 from typing import Dict, Any, Optional
 
-from backend.tools.gemini_client import ask_gemini_json
-
-
+from langchain_groq import ChatGroq
+from backend.tools.groq_client import ask_groq_json
 
 SYSTEM_INSTRUCTION = """
 You are SigmaTutor, an AI tutor specialized in Signals & Systems and Communication Engineering.
