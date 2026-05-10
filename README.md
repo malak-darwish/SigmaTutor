@@ -105,7 +105,3 @@ GROQ_API_KEY=YOUR_API_KEY
 ```
 
 ---
-
-## 👩‍💻 Authors
-
-Developed by the SigmaTutor Team.
